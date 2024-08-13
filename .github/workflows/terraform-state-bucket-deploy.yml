@@ -1,0 +1,25 @@
+name: Terraform State Bucket
+
+on:
+  workflow_dispatch:  # This workflow is triggered manually
+
+jobs:
+  create-state-buckets:
+    runs-on: ubuntu-latest  # Run the job on the latest Ubuntu runner
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2  # Check out the repository so that Terraform files are accessible
+
+    - name: Set up AWS credentials
+      uses: aws-actions/configure-aws-credentials@v1  # Configure AWS credentials using secrets
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-west-1  # Specify the AWS region
+
+    - name: Terraform Init and Apply
+      working-directory: ./global  # Set working directory to the global directory
+      run: |
+        terraform init  # Initialize Terraform in the global directory
+        terraform apply -auto-approve  # Apply the configuration to create S3 buckets and DynamoDB tables

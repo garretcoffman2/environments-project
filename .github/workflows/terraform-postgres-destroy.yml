@@ -1,0 +1,39 @@
+name: Terraform PostgreSQL Destroy
+
+on:
+  workflow_dispatch:  # This workflow is triggered manually
+
+jobs:
+  destroy-postgresql:
+    runs-on: ubuntu-latest  # Run the job on the latest Ubuntu runner
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2  # Check out the repository so that Terraform files are accessible
+
+    - name: Set up AWS credentials
+      uses: aws-actions/configure-aws-credentials@v1  # Configure AWS credentials using secrets
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-west-1  # Specify the AWS region
+
+    - name: Confirm Destruction
+      id: confirmation
+      run: |
+        echo "::notice::WARNING: Proceeding will delete the PostgreSQL database and all Grafana settings stored in it."
+        echo "::notice::Please confirm if you want to continue."
+        echo "::set-output name=confirm::$(read -p 'Type "yes" to confirm: ' user_input && echo $user_input)"
+
+    - name: Check Confirmation
+      if: steps.confirmation.outputs.confirm != 'yes'
+      run: |
+        echo "Destruction cancelled."
+        exit 1
+
+    - name: Terraform Init and Destroy - PostgreSQL
+      if: steps.confirmation.outputs.confirm == 'yes'
+      working-directory: ./grafana  # Set working directory to the Grafana environment where the PostgreSQL module is called
+      run: |
+        terraform init  # Initialize Terraform in the Grafana environment
+        terraform destroy -target=module.postgresql -auto-approve  # Destroy the PostgreSQL infrastructure

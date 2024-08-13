@@ -1,0 +1,38 @@
+name: Terraform Validate All
+
+on:
+  workflow_dispatch:  # Add the ability to manually trigger the workflow
+
+jobs:
+  lint-and-validate:
+    name: Lint and Validate Terraform
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        environment: [dev, staging, production]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v1
+        with:
+          terraform_version: 1.3.0  # Adjust the version as needed
+
+      - name: Terraform Format Check
+        run: terraform fmt -check
+        working-directory: ./terraform/environments/${{ matrix.environment }}
+
+      - name: Terraform Init
+        run: terraform init
+        working-directory: ./terraform/environments/${{ matrix.environment }}
+
+      - name: Terraform Validate
+        run: terraform validate
+        working-directory: ./terraform/environments/${{ matrix.environment }}
+
+      - name: Terraform Lint with tflint
+        run: tflint --module --config=./.tflint.hcl
+        working-directory: ./terraform/environments/${{ matrix.environment }}
+        env:
+          TFLINT_CONFIG: "./.tflint.hcl"

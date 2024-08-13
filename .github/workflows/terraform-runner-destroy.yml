@@ -1,0 +1,37 @@
+name: Terraform Runner Destroy
+
+on:
+  workflow_dispatch:  # This workflow is triggered manually
+
+jobs:
+  destroy-infrastructure:
+    runs-on: ubuntu-latest  # Run the job on the latest Ubuntu runner
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2  # Check out the repository so that Terraform files are accessible
+
+    - name: Set up AWS credentials
+      uses: aws-actions/configure-aws-credentials@v1  # Configure AWS credentials using secrets
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-west-1  # Specify the AWS region
+
+    - name: Terraform Init and Destroy - Development
+      working-directory: ./development  # Set working directory to the development environment
+      run: |
+        terraform init  # Initialize Terraform in the development environment
+        terraform destroy -auto-approve  # Destroy infrastructure for the development environment
+
+    - name: Terraform Init and Destroy - Staging
+      working-directory: ./staging  # Set working directory to the staging environment
+      run: |
+        terraform init  # Initialize Terraform in the staging environment
+        terraform destroy -auto-approve  # Destroy infrastructure for the staging environment
+
+    - name: Terraform Init and Destroy - Production
+      working-directory: ./production  # Set working directory to the production environment
+      run: |
+        terraform init  # Initialize Terraform in the production environment
+        terraform destroy -auto-approve  # Destroy infrastructure for the production environment

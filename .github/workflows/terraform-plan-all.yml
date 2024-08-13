@@ -1,0 +1,34 @@
+name: Terraform Plan All
+
+on:
+  workflow_dispatch:  # Add the ability to manually trigger the workflow
+
+jobs:
+  plan:
+    name: Terraform Plan
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        environment: [dev, staging, production]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v1
+        with:
+          terraform_version: 1.3.0  # Adjust the version as needed
+
+      - name: Terraform Init
+        run: terraform init
+        working-directory: ./terraform/environments/${{ matrix.environment }}
+
+      - name: Terraform Plan
+        run: terraform plan -out=plan-${{ matrix.environment }}.tfplan
+        working-directory: ./terraform/environments/${{ matrix.environment }}
+
+      - name: Upload Terraform Plan
+        uses: actions/upload-artifact@v2
+        with:
+          name: plan-${{ matrix.environment }}.tfplan
+          path: ./terraform/environments/${{ matrix.environment }}/plan-${{ matrix.environment }}.tfplan
